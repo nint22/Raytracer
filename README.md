@@ -14,10 +14,11 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Tasks
 
-- Fix aspect ratio of camera with given texture size..
+- Compute surface normals (and hit-position)
 
 ## Complete
 
+- Fix aspect ratio of camera with given texture size..
 - Add a sphere shape type
 - Add simple collision testing to sphere
 - Add state machine for checking before / in-flight / complete drawing, avoid double-calling setup, etc.

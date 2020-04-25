@@ -24,7 +24,7 @@
     [super viewDidLoad];
 
     // Setup our scene
-    Camera camera( simd_make_int2( 800, 600 ) );
+    Camera camera( simd_make_int2( 400, 300 ) );
     
     // Create a scene with a singular sphere in it
     Shape sphere(0.5);

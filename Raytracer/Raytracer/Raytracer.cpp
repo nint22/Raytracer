@@ -109,10 +109,14 @@ void Raytracer::renderAsync()
     const size_t backingBufferLength = sizeof( float4 ) * _camera.resolution().x * _camera.resolution().y;
     memset( _backingBuffer, 0, backingBufferLength );
     
+    // Define our horizontal field of view size as a specific unit size..
+    const float horizontalFieldOfView = 4;
+    const float verticalFieldOfView = ( (float)_camera.resolution().y / _camera.resolution().x ) * horizontalFieldOfView;
+    
     // For now let's define some constants that will eventually come from the camera
-    const float3 lower_left_corner = simd_make_float3(-2.0, -1.0, -1.0);
-    const float3 horizontal = simd_make_float3(4.0, 0.0, 0.0);
-    const float3 vertical = simd_make_float3(0.0, 2.0, 0.0);
+    const float3 lower_left_corner = simd_make_float3(-horizontalFieldOfView / 2.0, -verticalFieldOfView / 2.0, -1.0);
+    const float3 horizontal = simd_make_float3(horizontalFieldOfView, 0.0, 0.0);
+    const float3 vertical = simd_make_float3(0.0, verticalFieldOfView, 0.0);
     const float3 origin = simd_make_float3(0.0, 0.0, 0.0);
     const float2 f2Resolution = simd_make_float2( _camera.resolution().x, _camera.resolution().y );
     
@@ -241,7 +245,7 @@ float4 Raytracer::work(const WorkItem* workItem) const
     }
     
     float3 dir = simd_normalize(workItem->ray.dir);
-    float t = 0.5 * ( dir.y + 1.0 );
+    float t = 1.0 - 0.5 * ( dir.y + 1.0 );
     float3 color = ( 1.0 - t ) * simd_make_float3(1, 1, 1) + t * simd_make_float3( 0.5, 0.7, 1.0 );
     return simd_make_float4( color, 1 );
 }
