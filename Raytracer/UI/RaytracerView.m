@@ -44,8 +44,11 @@
     
     CGFloat ratio = fmin( widthRatio, heightRatio );
     
-    // Center
+    // Make sure to turn off any interpolation
     CGContextRef context = [[NSGraphicsContext currentContext] CGContext];
+    CGContextSetInterpolationQuality( context, kCGInterpolationNone );
+    
+    // Center
     const CGFloat dx = viewWidth / 2 - ( imageWidth * ratio ) / 2;
     const CGFloat dy = viewHeight / 2 - ( imageHeight * ratio ) / 2;
     CGContextTranslateCTM( context, dx, dy );

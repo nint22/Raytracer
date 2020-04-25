@@ -14,10 +14,12 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Tasks
 
-- Compute surface normals (and hit-position)
+- Deal with multiple objects and hit surface
 
 ## Complete
 
+- Hit test object closest
+- Compute surface normals (and hit-position)
 - Fix aspect ratio of camera with given texture size..
 - Add a sphere shape type
 - Add simple collision testing to sphere

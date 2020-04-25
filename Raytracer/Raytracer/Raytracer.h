@@ -46,8 +46,9 @@ public:
     // Sphere properties:
     float sphereRadius() const;
     
-    // Returns true on hit
-    bool hitTest(const Ray& ray) const;
+    // Returns true if a hit was found, and returns that
+    // position and normal via optional in/out via argument
+    bool hitTest(const Ray& ray, float3* hitPosition = nullptr, float3* hitNormal = nullptr) const;
     
 private:
     

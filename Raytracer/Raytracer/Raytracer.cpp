@@ -8,6 +8,8 @@
 
 #include "Raytracer.h"
 
+#include <limits>
+
 #pragma mark Ray Struct
 
 float3 Ray::at(float t) const
@@ -43,20 +45,35 @@ float Shape::sphereRadius() const
     return _radius;
 }
 
-bool Shape::hitTest(const Ray& ray) const
+bool Shape::hitTest(const Ray& ray, float3* hitPosition, float3* hitNormal) const
 {
     if( _type == Sphere )
     {
         float3 oc = ray.pos - _position;
-        float a = simd_dot( ray.dir, ray.dir );
-        float b = 2.0 * simd_dot( oc, ray.dir );
-        float c = simd_dot( oc, oc ) - _radius * _radius;
-        float discrim = b * b - 4.0 * a * c;
-        return ( discrim > 0.0 );
+        float3 dir = simd_normalize( ray.dir );
+        float a = simd_length_squared( dir );
+        float half_b = simd_dot( oc, dir );
+        float c = simd_length_squared( oc ) - _radius * _radius;
+        float discrim = half_b * half_b - a * c;
+        if( discrim < 0.0 )
+            return false;
+        
+        float t = ( -half_b - sqrt( discrim ) ) / a;
+        float3 hit = ray.at( t );
+        
+        if( hitPosition != nullptr )
+            *hitPosition = hit;
+        
+        float3 normal = simd_normalize( hit - simd_make_float3( 0, 0, -1 ) );
+        if( hitNormal )
+            *hitNormal = normal;
+        
+        return true;
     }
     else
     {
         assert( false ); // Not supported!
+        return false;
     }
 }
 
@@ -114,9 +131,9 @@ void Raytracer::renderAsync()
     const float verticalFieldOfView = ( (float)_camera.resolution().y / _camera.resolution().x ) * horizontalFieldOfView;
     
     // For now let's define some constants that will eventually come from the camera
-    const float3 lower_left_corner = simd_make_float3(-horizontalFieldOfView / 2.0, -verticalFieldOfView / 2.0, -1.0);
+    const float3 lower_left_corner = simd_make_float3(-horizontalFieldOfView / 2.0, verticalFieldOfView / 2.0, -1.0);
     const float3 horizontal = simd_make_float3(horizontalFieldOfView, 0.0, 0.0);
-    const float3 vertical = simd_make_float3(0.0, verticalFieldOfView, 0.0);
+    const float3 vertical = simd_make_float3(0.0, -verticalFieldOfView, 0.0);
     const float3 origin = simd_make_float3(0.0, 0.0, 0.0);
     const float2 f2Resolution = simd_make_float2( _camera.resolution().x, _camera.resolution().y );
     
@@ -236,16 +253,32 @@ CGImageRef Raytracer::copyRenderImage()
 float4 Raytracer::work(const WorkItem* workItem) const
 {
     // For each shape in the scene...
+    float bestDistance = std::numeric_limits<float>::max();
+    bool didHit = false;
+    float4 normalColor = simd_make_float4(0, 0, 0, 1);
+    
     for( const Shape& shape : _scene.shapes )
     {
-        if( shape.hitTest( workItem->ray ) )
+        float3 hitPosition, hitNormal;
+        if( shape.hitTest( workItem->ray, &hitPosition, &hitNormal ) )
         {
-            return simd_make_float4( 1, 0, 0, 1 );
+            float hitDistance = simd_length( hitPosition ); // Todo: - camera.position
+            if( hitDistance < bestDistance )
+            {
+                bestDistance = hitDistance;
+                didHit = true;
+                normalColor = simd_make_float4( ( hitNormal + 1 ) * 0.5, 1 );
+            }
         }
     }
     
+    if( didHit )
+    {
+        return normalColor;
+    }
+    
     float3 dir = simd_normalize(workItem->ray.dir);
-    float t = 1.0 - 0.5 * ( dir.y + 1.0 );
+    float t = 0.5 * ( dir.y + 1.0 );
     float3 color = ( 1.0 - t ) * simd_make_float3(1, 1, 1) + t * simd_make_float3( 0.5, 0.7, 1.0 );
     return simd_make_float4( color, 1 );
 }

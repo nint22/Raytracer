@@ -23,15 +23,21 @@
 {
     [super viewDidLoad];
 
-    // Setup our scene
-    Camera camera( simd_make_int2( 400, 300 ) );
+    // Setup a camera
+    Camera camera( simd_make_int2( 800, 600 ) );
     
-    // Create a scene with a singular sphere in it
+    // Setup our scene
+    Scene scene;
+    
+    // Dead-center sphere
     Shape sphere(0.5);
     sphere.setPosition( simd_make_float3( 0, 0, -1 ) );
-    
-    Scene scene;
     scene.shapes.push_back(sphere);
+    
+    // Sphere that looks like ground
+    Shape bigSphere(100);
+    bigSphere.setPosition( simd_make_float3( 0, -100.5, -1 ) );
+    scene.shapes.push_back(bigSphere);
     
     // Do any additional setup after loading the view.
     _raytracer = new Raytracer( camera, scene );
