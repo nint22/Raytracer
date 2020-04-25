@@ -14,6 +14,9 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Tasks
 
-- Create a simple UI that renders a CGImage from a bitmap
+- Setup async per-pixel drawing logic
 
 ## Complete
+
+- Setup the class structures in C++: raytracer, scene, camera, shape
+- Create a simple UI that renders a CGImage from a bitmap

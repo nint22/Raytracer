@@ -35,15 +35,23 @@
     
     // Scale given image to fit aspect ratio
     const size_t imageWidth = CGImageGetWidth( _image );
-    CGFloat widthRatio = [self bounds].size.width / imageWidth;
+    const CGFloat viewWidth = [self bounds].size.width;
+    CGFloat widthRatio = viewWidth / imageWidth;
     
     const size_t imageHeight = CGImageGetHeight( _image );
-    CGFloat heightRatio = [self bounds].size.height / imageHeight;
+    const CGFloat viewHeight = [self bounds].size.height;
+    CGFloat heightRatio = viewHeight / imageHeight;
     
     CGFloat ratio = fmin( widthRatio, heightRatio );
     
-    // TODO: Center image, scale
+    // Center
     CGContextRef context = [[NSGraphicsContext currentContext] CGContext];
+    const CGFloat dx = viewWidth / 2 - ( imageWidth * ratio ) / 2;
+    const CGFloat dy = viewHeight / 2 - ( imageHeight * ratio ) / 2;
+    CGContextTranslateCTM( context, dx, dy );
+    
+    // Scale
+    CGContextScaleCTM( context, ratio, ratio );
     
     // Draw image in question
     CGContextDrawImage( context, CGRectMake( 0, 0, imageWidth, imageHeight ), _image );

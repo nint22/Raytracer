@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0667A54B2454E2960034BC6C /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 0667A54A2454E2960034BC6C /* AppDelegate.m */; };
-		0667A54E2454E2960034BC6C /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0667A54D2454E2960034BC6C /* ViewController.m */; };
+		0667A54E2454E2960034BC6C /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0667A54D2454E2960034BC6C /* ViewController.mm */; };
 		0667A5502454E29F0034BC6C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0667A54F2454E29F0034BC6C /* Assets.xcassets */; };
 		0667A5532454E29F0034BC6C /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0667A5512454E29F0034BC6C /* Main.storyboard */; };
 		0667A5562454E29F0034BC6C /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 0667A5552454E29F0034BC6C /* main.m */; };
@@ -22,7 +22,7 @@
 		0667A5492454E2960034BC6C /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		0667A54A2454E2960034BC6C /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		0667A54C2454E2960034BC6C /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
-		0667A54D2454E2960034BC6C /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
+		0667A54D2454E2960034BC6C /* ViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ViewController.mm; sourceTree = "<group>"; };
 		0667A54F2454E29F0034BC6C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0667A5522454E29F0034BC6C /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		0667A5542454E29F0034BC6C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -33,6 +33,7 @@
 		0667A5622454E4330034BC6C /* RaytracerView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RaytracerView.m; sourceTree = "<group>"; };
 		0667A5642454E5010034BC6C /* Raytracer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Raytracer.cpp; sourceTree = "<group>"; };
 		0667A5652454E5010034BC6C /* Raytracer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Raytracer.h; sourceTree = "<group>"; };
+		0667A5672454E6CF0034BC6C /* VectorTypes.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = VectorTypes.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,7 +86,7 @@
 				0667A5612454E4330034BC6C /* RaytracerView.h */,
 				0667A5622454E4330034BC6C /* RaytracerView.m */,
 				0667A54C2454E2960034BC6C /* ViewController.h */,
-				0667A54D2454E2960034BC6C /* ViewController.m */,
+				0667A54D2454E2960034BC6C /* ViewController.mm */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -93,6 +94,7 @@
 		0667A5602454E3820034BC6C /* Raytracer */ = {
 			isa = PBXGroup;
 			children = (
+				0667A5672454E6CF0034BC6C /* VectorTypes.h */,
 				0667A5652454E5010034BC6C /* Raytracer.h */,
 				0667A5642454E5010034BC6C /* Raytracer.cpp */,
 			);
@@ -169,7 +171,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0667A54E2454E2960034BC6C /* ViewController.m in Sources */,
+				0667A54E2454E2960034BC6C /* ViewController.mm in Sources */,
 				0667A5562454E29F0034BC6C /* main.m in Sources */,
 				0667A5632454E4330034BC6C /* RaytracerView.m in Sources */,
 				0667A5662454E5010034BC6C /* Raytracer.cpp in Sources */,
