@@ -34,10 +34,21 @@
     
     // Start a timer that tries to sync a preview every second or so..
     _syncTimer = [NSTimer scheduledTimerWithTimeInterval: 1 repeats: true block: ^(NSTimer *timer) {
-        // Todo: handle completion to avoid syncing after done
-        CGImageRef progressImage = self->_raytracer->copyRenderImage();
+        
+        // Retain self...
+        Raytracer* raytracer = self->_raytracer;
+        
+        // Get latest image..
+        CGImageRef progressImage = raytracer->copyRenderImage();
         [self->_raytracerView updateImage: progressImage];
         CGImageRelease(progressImage);
+        
+        // If we're truely done, stop asking to update the backing image..
+        if( raytracer->isComplete() )
+        {
+            [self->_syncTimer invalidate];
+            self->_syncTimer = nil;
+        }
     }];
 }
 

@@ -14,11 +14,12 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Tasks
 
-- Fill with gradient as function of ray with camera setup
-- Add state machine for checking before / in-flight / complete drawing, avoid double-calling setup, etc.
+- Add a sphere
 
 ## Complete
 
+- Add state machine for checking before / in-flight / complete drawing, avoid double-calling setup, etc.
+- Fill with gradient as function of ray with camera setup
 - Setup async per-pixel drawing logic
 -- Complete via "WorkItem" pattern
 - Setup the class structures in C++: raytracer, scene, camera, shape

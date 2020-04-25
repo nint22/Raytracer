@@ -38,15 +38,27 @@ Raytracer::Raytracer(const Camera& camera)
     
     _workQueue = dispatch_queue_create( "Raytracer queue", dispatch_queue_attr_make_with_qos_class( 0, QOS_CLASS_USER_INITIATED, 0 ) );
     _workLock = OS_UNFAIR_LOCK_INIT;
+    
+    _state = Setup;
+    _finalImage = nullptr;
 }
 
 Raytracer::~Raytracer()
 {
     delete[] _backingBuffer;
+    if( _finalImage != nullptr )
+        CGImageRelease( _finalImage );
 }
 
 void Raytracer::renderAsync()
 {
+    // Ignore if we are no longer in setup state
+    if( _state != Setup )
+        return;
+    
+    // Declare we're going to be doing the work
+    _state = Active;
+    
     // Clear our backing buffer
     const size_t backingBufferLength = sizeof( float4 ) * _camera.resolution().x * _camera.resolution().y;
     memset( _backingBuffer, 0, backingBufferLength );
@@ -97,16 +109,32 @@ void Raytracer::renderAsync()
             _backingBuffer[ y * _camera.resolution().x + x ] = color;
             os_unfair_lock_unlock(&_backingBufferLock);
         });
+        
+        // All work complete, post update on main thread. I'm aware of how nasty
+        // this is with C++ code because nothing is retaining this object.. This is
+        // also making a big assumption that the caller is always on the main thread.
+        // Ew ew ew
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _state = Complete;
+        });
     });
 }
 
 bool Raytracer::isComplete()
 {
-    return false;
+    return ( _state == Complete && _finalImage != nullptr );
 }
 
 CGImageRef Raytracer::copyRenderImage()
 {
+    // If we're already done rendering *and* we have a cached final image...
+    if( isComplete() )
+    {
+        // Retain per "copy" contract via function signature
+        CGImageRetain( _finalImage );
+        return _finalImage;
+    }
+    
     // Create our image backing buffer.
     int2 resolution = _camera.resolution();
     uint32_t* imageBuffer = new uint32_t[ resolution.x * resolution.y ];
@@ -141,8 +169,17 @@ CGImageRef Raytracer::copyRenderImage()
     CGImageRef image = CGBitmapContextCreateImage( context );
     CGColorSpaceRelease( colorSpace );
     
-    // Done with backing buffer, return image
+    // Done with backing buffer
     free( imageBuffer );
+    
+    // If we're now complete, retain the final image
+    if( _state == Complete )
+    {
+        _finalImage = image;
+        CGImageRetain( _finalImage );
+    }
+    
+    // Done with backing buffer, return image
     return image;
 }
 

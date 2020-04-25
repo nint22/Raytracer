@@ -96,6 +96,16 @@ private:
     os_unfair_lock _workLock;
     std::vector< WorkItem > _workItems;
     
+    // Current state
+    enum State {
+        Setup,      // Initialized, doing no work
+        Active,     // Active work
+        Complete,   // All done!
+    } _state;
+    
+    // Final image we've rendered
+    CGImageRef _finalImage;
+    
 };
 
 #endif /* Raytracer_h */
