@@ -89,6 +89,9 @@ private:
         Ray ray;
     };
     
+    // Do work given a work item. Returns color contribution
+    float4 work(const WorkItem* workItem) const;
+    
     // Work items and lock
     os_unfair_lock _workLock;
     std::vector< WorkItem > _workItems;

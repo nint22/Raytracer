@@ -13,8 +13,8 @@
 
 using int2 = simd_int2;
 
-using float2 = simd_float4;
-using float3 = simd_float4;
+using float2 = simd_float2;
+using float3 = simd_float3;
 using float4 = simd_float4;
 
 inline uint8_t clamp( float value, uint8_t min, uint8_t max )

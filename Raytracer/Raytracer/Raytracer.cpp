@@ -51,14 +51,28 @@ void Raytracer::renderAsync()
     const size_t backingBufferLength = sizeof( float4 ) * _camera.resolution().x * _camera.resolution().y;
     memset( _backingBuffer, 0, backingBufferLength );
     
+    // For now let's define some constants that will eventually come from the camera
+    const float3 lower_left_corner = simd_make_float3(-2.0, -1.0, -1.0);
+    const float3 horizontal = simd_make_float3(4.0, 0.0, 0.0);
+    const float3 vertical = simd_make_float3(0.0, 2.0, 0.0);
+    const float3 origin = simd_make_float3(0.0, 0.0, 0.0);
+    const float2 f2Resolution = simd_make_float2( _camera.resolution().x, _camera.resolution().y );
+    
     // Create all the work we want to complete
     for( int y = 0; y < _camera.resolution().y; y++ )
     {
         for( int x = 0; x < _camera.resolution().x; x++ )
         {
+            // Work item at pixel...
             WorkItem workItem;
             workItem.pixelPos = simd_make_int2(x, y);
-            //workItem.ray TODO
+            
+            // UV coordinate
+            float2 uv = simd_make_float2(x, y) / f2Resolution;
+            workItem.ray.pos = origin;
+            workItem.ray.dir = lower_left_corner + uv.x * horizontal + uv.y * vertical;
+            
+            // Push work
             _workItems.push_back(workItem);
         }
     }
@@ -74,7 +88,7 @@ void Raytracer::renderAsync()
             os_unfair_lock_unlock(&_workLock);
             
             // Do work
-            float4 color = simd_make_float4(1, 0, 0, 1);
+            float4 color = work(&workItem);
             
             // Store to our backing buffer
             os_unfair_lock_lock(&_backingBufferLock);
@@ -130,4 +144,12 @@ CGImageRef Raytracer::copyRenderImage()
     // Done with backing buffer, return image
     free( imageBuffer );
     return image;
+}
+
+float4 Raytracer::work(const WorkItem* workItem) const
+{
+    float3 dir = simd_normalize(workItem->ray.dir);
+    float t = 0.5 * ( dir.y + 1.0 );
+    float3 color = ( 1.0 - t ) * simd_make_float3(1, 1, 1) + t * simd_make_float3( 0.5, 0.7, 1.0 );
+    return simd_make_float4( color, 1 );
 }

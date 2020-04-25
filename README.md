@@ -15,6 +15,7 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 ## Tasks
 
 - Fill with gradient as function of ray with camera setup
+- Add state machine for checking before / in-flight / complete drawing, avoid double-calling setup, etc.
 
 ## Complete
 
