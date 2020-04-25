@@ -30,12 +30,40 @@ class Shape
 {
 public:
     
+    enum Type {
+        Sphere,
+    };
+    
+    Shape(float radius);
+    
+    // Get type
+    Type type() const;
+    
+    // Common properties
+    float3 position() const;
+    void setPosition(const float3& p);
+    
+    // Sphere properties:
+    float sphereRadius() const;
+    
+    // Returns true on hit
+    bool hitTest(const Ray& ray) const;
+    
+private:
+    
+    Type _type;
+    float3 _position = simd_make_float3( 0, 0, 0 );
+    
+    float _radius;
+    
 };
 
 // Scene has a collection of shapes
 class Scene
 {
 public:
+    
+    std::vector< Shape > shapes;
     
 };
 
@@ -59,7 +87,7 @@ class Raytracer
 {
 public:
     
-    Raytracer(const Camera& camera);
+    Raytracer(const Camera& camera, const Scene& scene);
     ~Raytracer();
     
     // Start rendering: this is a background operation, non-blocking
@@ -72,8 +100,9 @@ public:
     
 private:
     
-    // Camera in scene to render from
+    // Camera and scene to render
     Camera _camera;
+    Scene _scene;
     
     // Backing image buffer
     os_unfair_lock _backingBufferLock;

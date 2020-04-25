@@ -15,6 +15,51 @@ float3 Ray::at(float t) const
     return pos + simd_normalize(dir) * t;
 }
 
+#pragma mark Sphere Class
+
+Shape::Shape(float radius)
+{
+    _type = Sphere;
+    _radius = radius;
+}
+
+Shape::Type Shape::type() const
+{
+    return _type;
+}
+
+float3 Shape::position() const
+{
+    return _position;
+}
+
+void Shape::setPosition(const float3& p)
+{
+    _position = p;
+}
+
+float Shape::sphereRadius() const
+{
+    return _radius;
+}
+
+bool Shape::hitTest(const Ray& ray) const
+{
+    if( _type == Sphere )
+    {
+        float3 oc = ray.pos - _position;
+        float a = simd_dot( ray.dir, ray.dir );
+        float b = 2.0 * simd_dot( oc, ray.dir );
+        float c = simd_dot( oc, oc ) - _radius * _radius;
+        float discrim = b * b - 4.0 * a * c;
+        return ( discrim > 0.0 );
+    }
+    else
+    {
+        assert( false ); // Not supported!
+    }
+}
+
 #pragma mark Camera Class
 
 Camera::Camera(int2 resolution)
@@ -29,9 +74,10 @@ int2 Camera::resolution() const
 
 #pragma mark Raytracer Class
 
-Raytracer::Raytracer(const Camera& camera)
+Raytracer::Raytracer(const Camera& camera, const Scene& scene)
 {
     _camera = camera;
+    _scene = scene;
     
     _backingBuffer = new float4[ camera.resolution().x * camera.resolution().y ];
     _backingBufferLock = OS_UNFAIR_LOCK_INIT;
@@ -185,6 +231,15 @@ CGImageRef Raytracer::copyRenderImage()
 
 float4 Raytracer::work(const WorkItem* workItem) const
 {
+    // For each shape in the scene...
+    for( const Shape& shape : _scene.shapes )
+    {
+        if( shape.hitTest( workItem->ray ) )
+        {
+            return simd_make_float4( 1, 0, 0, 1 );
+        }
+    }
+    
     float3 dir = simd_normalize(workItem->ray.dir);
     float t = 0.5 * ( dir.y + 1.0 );
     float3 color = ( 1.0 - t ) * simd_make_float3(1, 1, 1) + t * simd_make_float3( 0.5, 0.7, 1.0 );

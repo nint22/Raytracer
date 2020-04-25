@@ -26,8 +26,15 @@
     // Setup our scene
     Camera camera( simd_make_int2( 800, 600 ) );
     
+    // Create a scene with a singular sphere in it
+    Shape sphere(0.5);
+    sphere.setPosition( simd_make_float3( 0, 0, -1 ) );
+    
+    Scene scene;
+    scene.shapes.push_back(sphere);
+    
     // Do any additional setup after loading the view.
-    _raytracer = new Raytracer( camera );
+    _raytracer = new Raytracer( camera, scene );
     
     // Start rendering right away
     _raytracer->renderAsync();

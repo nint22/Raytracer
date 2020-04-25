@@ -14,10 +14,12 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Tasks
 
-- Add a sphere
+- Fix aspect ratio of camera with given texture size..
 
 ## Complete
 
+- Add a sphere shape type
+- Add simple collision testing to sphere
 - Add state machine for checking before / in-flight / complete drawing, avoid double-calling setup, etc.
 - Fill with gradient as function of ray with camera setup
 - Setup async per-pixel drawing logic
