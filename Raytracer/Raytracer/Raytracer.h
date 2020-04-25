@@ -10,8 +10,20 @@
 #define Raytracer_h
 
 #include <CoreGraphics/CoreGraphics.h>
+#include <dispatch/dispatch.h>
+#include <os/lock.h>
+#include <vector>
 
 #include "VectorTypes.h"
+
+// Ray has origin and direction
+struct Ray
+{
+    float3 pos;
+    float3 dir;
+    
+    float3 at(float t) const;
+};
 
 // Shape is a union - could sub-class, but keeping it simple for now
 class Shape
@@ -62,6 +74,24 @@ private:
     
     // Camera in scene to render from
     Camera _camera;
+    
+    // Backing image buffer
+    os_unfair_lock _backingBufferLock;
+    float4* _backingBuffer;
+    
+    // Background queue we're doing the dispatch_apply from
+    dispatch_queue_t _workQueue;
+    
+    // Work item
+    struct WorkItem
+    {
+        int2 pixelPos;
+        Ray ray;
+    };
+    
+    // Work items and lock
+    os_unfair_lock _workLock;
+    std::vector< WorkItem > _workItems;
     
 };
 

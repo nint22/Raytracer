@@ -14,9 +14,11 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Tasks
 
-- Setup async per-pixel drawing logic
+- Fill with gradient as function of ray with camera setup
 
 ## Complete
 
+- Setup async per-pixel drawing logic
+-- Complete via "WorkItem" pattern
 - Setup the class structures in C++: raytracer, scene, camera, shape
 - Create a simple UI that renders a CGImage from a bitmap
