@@ -19,6 +19,7 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Complete
 
+- Fixed gamma correction
 - Reflect completion status in window..
 - Randomize work items
 - Avoid creating work items for anti-aliasing, just do that per pixel

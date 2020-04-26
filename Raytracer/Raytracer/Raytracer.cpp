@@ -272,11 +272,16 @@ void Raytracer::renderAsync()
                 color += rayTest(ray);
             }
             
+            // Normalize color to both the sample count *and* be gamma corrected
+            color.x = sqrt( color.x / _camera.sampleCount() );
+            color.y = sqrt( color.y / _camera.sampleCount() );
+            color.z = sqrt( color.z / _camera.sampleCount() );
+            
             // Store to our backing buffer
             os_unfair_lock_lock(&_backingBufferLock);
             const int x = workItem.pixelPos.x;
             const int y = workItem.pixelPos.y;
-            _backingBuffer[ y * _camera.resolution().x + x ] = color / _camera.sampleCount();
+            _backingBuffer[ y * _camera.resolution().x + x ] = color;
             os_unfair_lock_unlock(&_backingBufferLock);
         });
         
