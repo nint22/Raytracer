@@ -366,7 +366,7 @@ float4 Raytracer::rayTest(const Ray& ray, int depth) const
         return simd_make_float4( 0, 0, 0, 0 );
     
     Hit candidate;
-    if( _scene.hitTest( ray, 0, std::numeric_limits<float>::max(), &candidate ) )
+    if( _scene.hitTest( ray, 0.001, std::numeric_limits<float>::max(), &candidate ) )
     {
         float3 target = candidate.pos + candidate.norm + random_sphere_float3();
         Ray newRay;

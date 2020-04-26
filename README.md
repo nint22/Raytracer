@@ -19,6 +19,7 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Complete
 
+- Fixed shadow acne
 - Fixed gamma correction
 - Reflect completion status in window..
 - Randomize work items
