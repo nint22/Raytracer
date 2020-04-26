@@ -35,6 +35,7 @@ struct Hit
     float3 pos;
     float3 norm;
     IMaterial* material = nullptr;
+    bool isFrontFace;
 };
 
 // Interface to do collision testing: any shape class should conform tothis
@@ -88,6 +89,21 @@ private:
     float3 _albedo;
     float _roughness;
 };
+
+// Concrete glass material
+class DielectricMaterial : public IMaterial
+{
+public:
+
+    DielectricMaterial(float ri);
+    
+    bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const override;
+    
+private:
+    
+    float _ri;
+};
+
 
 // Sphere, conforming to hittable
 class Sphere : public IHittable

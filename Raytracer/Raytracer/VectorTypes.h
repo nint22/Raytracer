@@ -72,4 +72,19 @@ inline float3 reflect(float3 v, float3 n)
     return v - 2.0 * simd_dot( v, n ) * n;
 }
 
+inline float3 refract(float3 uv, float3 n, float etaiOverEtat)
+{
+    float cosTheta = simd_dot( -uv, n );
+    float3 outParallel = etaiOverEtat * ( uv + cosTheta * n );
+    float3 outPerp = -sqrt( 1.0 - simd_length_squared( outParallel ) ) * n;
+    return outParallel + outPerp;
+}
+
+inline float schlick(float cosine, float idx)
+{
+    float r0 = ( 1.0 - idx ) / ( 1 + idx );
+    r0 *= r0;
+    return r0 + ( 1.0 - r0 ) * pow( 1.0 - cosine, 5.0 );
+}
+
 #endif /* VectorTypes_h */

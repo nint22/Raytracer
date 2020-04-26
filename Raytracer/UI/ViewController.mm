@@ -24,7 +24,7 @@
     [super viewDidLoad];
 
     // Setup a camera
-    Camera camera( simd_make_int2( 600, 300 ) );
+    Camera camera( simd_make_int2( 300, 150 ) );
     camera.setSampleCount( 100 );
     camera.setMaxBounceCount( 50 );
     
@@ -46,12 +46,19 @@
     // Metalic spheres
     sphere = new Sphere(0.5);
     sphere->setPosition( simd_make_float3( 1, 0, -1 ) );
-    sphere->setMaterial( new MetalMaterial( simd_make_float3( 0.8, 0.6, 0.2 ), 0.5 ) );
+    sphere->setMaterial( new MetalMaterial( simd_make_float3( 0.8, 0.6, 0.2 ), 1.0 ) );
     scene.shapes.push_back(sphere);
     
+    // Glass sphere
     sphere = new Sphere(0.5);
     sphere->setPosition( simd_make_float3( -1, 0, -1 ) );
-    sphere->setMaterial( new MetalMaterial( simd_make_float3( 0.8, 0.8, 0.8 ), 1.0 ) );
+    sphere->setMaterial( new DielectricMaterial(1.5) );
+    scene.shapes.push_back(sphere);
+    
+    // With empty interior
+    sphere = new Sphere(-0.45);
+    sphere->setPosition( simd_make_float3( -1, 0, -1 ) );
+    sphere->setMaterial( new DielectricMaterial(1.5) );
     scene.shapes.push_back(sphere);
     
     // Do any additional setup after loading the view.
@@ -61,7 +68,7 @@
     _raytracer->renderAsync();
     
     // Start a timer that tries to sync a preview every second or so..
-    _syncTimer = [NSTimer scheduledTimerWithTimeInterval: 1 repeats: true block: ^(NSTimer *timer) {
+    _syncTimer = [NSTimer scheduledTimerWithTimeInterval: 0.2 repeats: true block: ^(NSTimer *timer) {
         
         // Retain self...
         Raytracer* raytracer = self->_raytracer;

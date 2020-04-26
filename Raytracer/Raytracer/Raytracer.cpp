@@ -50,6 +50,48 @@ bool MetalMaterial::scatter(const Ray& ray, const Hit& hit, float3* attenuation,
     return ( simd_dot( scattered->dir, hit.norm ) > 0 );
 }
 
+DielectricMaterial::DielectricMaterial(float ri)
+{
+    _ri = ri;
+}
+
+bool DielectricMaterial::scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const
+{
+    *attenuation = simd_make_float3( 1, 1, 1 );
+    
+    float etaiOverEtat = 1.0 / _ri;
+    if( hit.isFrontFace == false )
+        etaiOverEtat = _ri;
+    
+    float3 unitDirection = simd_normalize( ray.dir );
+    
+    float cosTheta = fmin( simd_dot( -unitDirection, hit.norm ), 1.0 );
+    float sinTheta = sqrt( 1.0 - cosTheta * cosTheta );
+    
+    float reflectionPorbability = schlick( cosTheta, etaiOverEtat );
+    
+    if( etaiOverEtat * sinTheta > 1.0 )
+    {
+        float3 reflected = reflect(unitDirection, hit.norm);
+        scattered->pos = hit.pos;
+        scattered->dir = reflected;
+    }
+    else if( random_float() < reflectionPorbability )
+    {
+        float3 reflected = reflect(unitDirection, hit.norm);
+        scattered->pos = hit.pos;
+        scattered->dir = reflected;
+    }
+    else
+    {
+        float3 refracted = refract(unitDirection, hit.norm, etaiOverEtat);
+        scattered->pos = hit.pos;
+        scattered->dir = refracted;
+    }
+    
+    return true;
+}
+
 #pragma mark Sphere Class
 
 Sphere::Sphere(float radius)
@@ -118,8 +160,9 @@ bool Sphere::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
         if( hit != nullptr )
         {
             hit->pos = position;
-            hit->norm = normal;
             hit->material = _material;
+            hit->isFrontFace = ( simd_dot( ray.dir, normal ) < 0.0 );
+            hit->norm = hit->isFrontFace ? normal : -normal;
         }
         
         return true;
@@ -135,8 +178,9 @@ bool Sphere::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
         if( hit != nullptr )
         {
             hit->pos = position;
-            hit->norm = normal;
             hit->material = _material;
+            hit->isFrontFace = ( simd_dot( ray.dir, normal ) < 0.0 );
+            hit->norm = hit->isFrontFace ? normal : -normal;
         }
         
         return true;
