@@ -218,7 +218,7 @@ bool Scene::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
 
 #pragma mark Camera Class
 
-Camera::Camera(int2 resolution, float fovy)
+Camera::Camera(int2 resolution, float3 position, float3 target, float3 up, float fovy)
 {
     _fovy = fovy;
     _resolution = resolution;
@@ -228,10 +228,14 @@ Camera::Camera(int2 resolution, float fovy)
     float halfHeight = tan( fovy / 2.0 );
     float halfWidth = ( (float)_resolution.x / _resolution.y ) * halfHeight;
     
-    // For now let's define some constants that will eventually come from the camera
-    lowerLeftCornerPosition = simd_make_float3( -halfWidth, halfHeight, -1.0 );
-    horizontalVector = simd_make_float3( 2 * halfWidth, 0.0, 0.0 );
-    verticalVector = simd_make_float3( 0.0, -2 * halfHeight, 0.0 );
+    _position = position;
+    float3 w = simd_normalize( position - target );
+    float3 u = simd_normalize( simd_cross( up, w ) );
+    float3 v = simd_cross( w, u );
+    
+    lowerLeftCornerPosition = position - halfWidth * u - halfHeight * v - w;
+    horizontalVector = 2.0 * halfWidth * u;
+    verticalVector = 2.0 * halfHeight * v;
 }
 
 int2 Camera::resolution() const

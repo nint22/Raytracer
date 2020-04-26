@@ -22,6 +22,7 @@ of bounce or sample.
 
 ## Complete
 
+- Implement camera look-at (huh, not using matrix, but rather doing the math directly and simplified)
 - Camera position
 - Camera field-of-view (vertical degrees)
 - Support front / back intersection differentiation

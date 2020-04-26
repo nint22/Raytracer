@@ -156,7 +156,7 @@ class Camera
 public:
     
     Camera() = default;
-    Camera(int2 resolution, float fovy);
+    Camera(int2 resolution, float3 position, float3 target, float3 up, float fovy);
     
     int2 resolution() const;
     

@@ -23,8 +23,13 @@
 {
     [super viewDidLoad];
 
+    // Camera position
+    float3 cameraPos = simd_make_float3( -2, 2, 1 );
+    float3 cameraTarget = simd_make_float3( 0, 0, -1 );
+    float3 cameraUp = simd_make_float3( 0, -1, 0 );
+    
     // Setup a camera
-    Camera camera( simd_make_int2( 300, 150 ), 85 );
+    Camera camera( simd_make_int2( 300, 150 ), cameraPos, cameraTarget, cameraUp, 45 );
     camera.setSampleCount( 100 );
     camera.setMaxBounceCount( 50 );
     
