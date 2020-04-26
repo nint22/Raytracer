@@ -218,10 +218,12 @@ bool Scene::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
 
 #pragma mark Camera Class
 
-Camera::Camera(int2 resolution, float3 position, float3 target, float3 up, float fovy)
+Camera::Camera(int2 resolution, float3 position, float3 target, float3 up, float fovy,
+               float aperature, float focusDistance)
 {
     _fovy = fovy;
     _resolution = resolution;
+    _lensRadius = aperature / 2.0;
     
     // Degrees to radians
     fovy *= ( M_PI / 180.0 );
@@ -229,13 +231,13 @@ Camera::Camera(int2 resolution, float3 position, float3 target, float3 up, float
     float halfWidth = ( (float)_resolution.x / _resolution.y ) * halfHeight;
     
     _position = position;
-    float3 w = simd_normalize( position - target );
-    float3 u = simd_normalize( simd_cross( up, w ) );
-    float3 v = simd_cross( w, u );
+    w = simd_normalize( position - target );
+    u = simd_normalize( simd_cross( up, w ) );
+    v = simd_cross( w, u );
     
-    lowerLeftCornerPosition = position - halfWidth * u - halfHeight * v - w;
-    horizontalVector = 2.0 * halfWidth * u;
-    verticalVector = 2.0 * halfHeight * v;
+    lowerLeftCornerPosition = position - halfWidth * focusDistance * u - halfHeight * focusDistance * v - focusDistance * w;
+    horizontalVector = 2.0 * halfWidth * focusDistance * u;
+    verticalVector = 2.0 * halfHeight * focusDistance * v;
 }
 
 int2 Camera::resolution() const
@@ -275,9 +277,12 @@ void Camera::setPosition(float3 position)
 
 Ray Camera::getRay(float2 uv) const
 {
+    float3 rd = _lensRadius * random_unit_disk();
+    float3 offset = u * rd.x + v * rd.y;
+    
     Ray ray;
-    ray.pos = _position;
-    ray.dir = lowerLeftCornerPosition + uv.x * horizontalVector + uv.y * verticalVector - _position;
+    ray.pos = _position + offset;
+    ray.dir = lowerLeftCornerPosition + uv.x * horizontalVector + uv.y * verticalVector - _position - offset;
     return ray;
 }
 

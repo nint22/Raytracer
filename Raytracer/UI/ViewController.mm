@@ -24,12 +24,16 @@
     [super viewDidLoad];
 
     // Camera position
-    float3 cameraPos = simd_make_float3( -2, 2, 1 );
+    float3 cameraPos = simd_make_float3( 3, 3, 2 );
     float3 cameraTarget = simd_make_float3( 0, 0, -1 );
     float3 cameraUp = simd_make_float3( 0, -1, 0 );
     
+    // Defocus blur
+    float aperature = 2;
+    float distanceToFocus = simd_length( cameraTarget - cameraPos );
+    
     // Setup a camera
-    Camera camera( simd_make_int2( 300, 150 ), cameraPos, cameraTarget, cameraUp, 45 );
+    Camera camera( simd_make_int2( 300, 150 ), cameraPos, cameraTarget, cameraUp, 20, aperature, distanceToFocus );
     camera.setSampleCount( 100 );
     camera.setMaxBounceCount( 50 );
     

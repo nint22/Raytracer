@@ -155,8 +155,10 @@ class Camera
 {
 public:
     
+    // In real life I'd make these a camera "options struct"
     Camera() = default;
-    Camera(int2 resolution, float3 position, float3 target, float3 up, float fovy);
+    Camera(int2 resolution, float3 position, float3 target, float3 up, float fovy,
+           float aperature, float focusDistance);
     
     int2 resolution() const;
     
@@ -175,6 +177,7 @@ public:
 private:
     
     float _fovy; // Vertical degrees
+    float _lensRadius;
     int2 _resolution = simd_make_int2(100, 100);
     
     int _sampleCount = 1;
@@ -186,6 +189,9 @@ private:
     float3 lowerLeftCornerPosition;
     float3 horizontalVector;
     float3 verticalVector;
+    
+    // Basis
+    float3 u, v, w;
 };
 
 // Raytracer is the main rendering service. Takes a scene, camera, and renders it out

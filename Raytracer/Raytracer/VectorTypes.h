@@ -87,4 +87,15 @@ inline float schlick(float cosine, float idx)
     return r0 + ( 1.0 - r0 ) * pow( 1.0 - cosine, 5.0 );
 }
 
+// Only on the XY plane..
+inline float3 random_unit_disk()
+{
+    while( true )
+    {
+        float3 p = simd_make_float3( random_float( -1, 1 ), random_float( -1, 1 ), 0.0 );
+        if( simd_length( p ) < 1 )
+            return p;
+    }
+}
+
 #endif /* VectorTypes_h */
