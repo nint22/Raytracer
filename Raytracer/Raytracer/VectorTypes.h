@@ -67,4 +67,9 @@ inline float3 random_unit_float3()
     return simd_make_float3( r * cos( a ), r * sin( a ), z );
 }
 
+inline float3 reflect(float3 v, float3 n)
+{
+    return v - 2.0 * simd_dot( v, n ) * n;
+}
+
 #endif /* VectorTypes_h */

@@ -20,11 +20,49 @@ float3 Ray::at(float t) const
     return pos + simd_normalize(dir) * t;
 }
 
+#pragma mark Material Classes
+
+LambertianMaterial::LambertianMaterial(const float3& albedo)
+{
+    _albedo = albedo;
+}
+
+bool LambertianMaterial::scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const
+{
+    scattered->pos = hit.pos;
+    scattered->dir = hit.norm + random_unit_float3();
+    *attenuation = _albedo;
+    return true;
+}
+
+MetalMaterial::MetalMaterial(const float3& albedo, float roughness)
+{
+    _albedo = albedo;
+    _roughness = clamp( roughness, 0, 1 );
+}
+
+bool MetalMaterial::scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const
+{
+    float3 reflected = reflect( simd_normalize( ray.dir), hit.norm );
+    scattered->pos = hit.pos;
+    scattered->dir = reflected + _roughness * random_unit_float3();
+    *attenuation = _albedo;
+    return ( simd_dot( scattered->dir, hit.norm ) > 0 );
+}
+
 #pragma mark Sphere Class
 
 Sphere::Sphere(float radius)
 {
     _radius = radius;
+    
+    // Default material:
+    _material = new LambertianMaterial(simd_make_float3(0.5, 0.5, 0.5));
+}
+
+Sphere::~Sphere()
+{
+    delete _material;
 }
 
 float3 Sphere::position() const
@@ -40,6 +78,23 @@ void Sphere::setPosition(const float3& p)
 float Sphere::radius() const
 {
     return _radius;
+}
+
+void Sphere::setRadius(float radius)
+{
+    _radius = radius;
+}
+
+IMaterial* Sphere::material() const
+{
+    return _material;
+}
+
+void Sphere::setMaterial(IMaterial* material)
+{
+    // Delete old, take new
+    delete _material;
+    _material = material;
 }
 
 bool Sphere::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
@@ -64,6 +119,7 @@ bool Sphere::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
         {
             hit->pos = position;
             hit->norm = normal;
+            hit->material = _material;
         }
         
         return true;
@@ -80,6 +136,7 @@ bool Sphere::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
         {
             hit->pos = position;
             hit->norm = normal;
+            hit->material = _material;
         }
         
         return true;
@@ -181,7 +238,7 @@ Raytracer::Raytracer(const Camera& camera, const Scene& scene)
     _camera = camera;
     _scene = scene;
     
-    _backingBuffer = new float4[ camera.resolution().x * camera.resolution().y ];
+    _backingBuffer = new float3[ camera.resolution().x * camera.resolution().y ];
     _backingBufferLock = OS_UNFAIR_LOCK_INIT;
     
     _workQueue = dispatch_queue_create( "Raytracer queue", dispatch_queue_attr_make_with_qos_class( 0, QOS_CLASS_DEFAULT, 0 ) );
@@ -211,7 +268,7 @@ void Raytracer::renderAsync()
     dispatch_async(_workQueue, ^{
 
         // Clear our backing buffer
-        const size_t backingBufferLength = sizeof( float4 ) * _camera.resolution().x * _camera.resolution().y;
+        const size_t backingBufferLength = sizeof( float3 ) * _camera.resolution().x * _camera.resolution().y;
         memset( _backingBuffer, 0, backingBufferLength );
         
         // Create all the work we want to complete
@@ -246,7 +303,7 @@ void Raytracer::renderAsync()
             os_unfair_lock_unlock(&_workLock);
             
             // Do work
-            float4 color = simd_make_float4( 0, 0, 0, 0 );
+            float3 color = simd_make_float3( 0, 0, 0 );
 
             // Helpful constant
             const float2 f2Resolution = simd_make_float2( _camera.resolution().x, _camera.resolution().y );
@@ -321,7 +378,7 @@ CGImageRef Raytracer::copyRenderImage()
             // Convert from normalized color to
             const int pixelIndex = y * _camera.resolution().x + x;
             
-            float4 sourceColor = _backingBuffer[ pixelIndex ];
+            float3 sourceColor = _backingBuffer[ pixelIndex ];
             
             uint8_t r = clamp( sourceColor.x * 255.0f, 0, 255 );
             uint8_t g = clamp( sourceColor.y * 255.0f, 0, 255 );
@@ -356,24 +413,24 @@ CGImageRef Raytracer::copyRenderImage()
     return image;
 }
 
-float4 Raytracer::rayTest(const Ray& ray, int depth) const
+float3 Raytracer::rayTest(const Ray& ray, int depth) const
 {
     // Ignore if reached max depth
     if( depth >= _camera.maxBounceCount() )
-        return simd_make_float4( 0, 0, 0, 0 );
+        return simd_make_float3( 0, 0, 0 );
     
     Hit candidate;
     if( _scene.hitTest( ray, 0.001, std::numeric_limits<float>::max(), &candidate ) )
     {
-        float3 target = candidate.pos + candidate.norm + random_unit_float3();
-        Ray newRay;
-        newRay.pos = candidate.pos;
-        newRay.dir = target - candidate.pos;
-        return 0.5 * rayTest( newRay, depth + 1 );
+        Ray scatteredRay;
+        float3 attenuation;
+        if( candidate.material->scatter( ray, candidate, &attenuation, &scatteredRay ) )
+        {
+            return attenuation * rayTest( scatteredRay, depth + 1 );
+        }
     }
     
     float3 dir = simd_normalize(ray.dir);
     float t = 0.5 * ( dir.y + 1.0 );
-    float3 color = ( 1.0 - t ) * simd_make_float3( 1, 1, 1 ) + t * simd_make_float3( 0.5, 0.7, 1.0 );
-    return simd_make_float4( color, 1 );
+    return ( 1.0 - t ) * simd_make_float3( 1, 1, 1 ) + t * simd_make_float3( 0.5, 0.7, 1.0 );
 }

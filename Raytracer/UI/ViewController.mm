@@ -24,7 +24,7 @@
     [super viewDidLoad];
 
     // Setup a camera
-    Camera camera( simd_make_int2( 200, 150 ) );
+    Camera camera( simd_make_int2( 600, 300 ) );
     camera.setSampleCount( 100 );
     camera.setMaxBounceCount( 50 );
     
@@ -34,11 +34,24 @@
     // Dead-center sphere
     Sphere* sphere = new Sphere(0.5);
     sphere->setPosition( simd_make_float3( 0, 0, -1 ) );
+    sphere->setMaterial( new LambertianMaterial( simd_make_float3( 0.7, 0.3, 0.3 ) ) );
     scene.shapes.push_back(sphere);
     
     // Sphere that looks like ground
     sphere = new Sphere(100);
     sphere->setPosition( simd_make_float3( 0, -100.5, -1 ) );
+    sphere->setMaterial( new LambertianMaterial( simd_make_float3( 0.8, 0.8, 0.0 ) ) );
+    scene.shapes.push_back(sphere);
+    
+    // Metalic spheres
+    sphere = new Sphere(0.5);
+    sphere->setPosition( simd_make_float3( 1, 0, -1 ) );
+    sphere->setMaterial( new MetalMaterial( simd_make_float3( 0.8, 0.6, 0.2 ), 0.5 ) );
+    scene.shapes.push_back(sphere);
+    
+    sphere = new Sphere(0.5);
+    sphere->setPosition( simd_make_float3( -1, 0, -1 ) );
+    sphere->setMaterial( new MetalMaterial( simd_make_float3( 0.8, 0.8, 0.8 ), 1.0 ) );
     scene.shapes.push_back(sphere);
     
     // Do any additional setup after loading the view.

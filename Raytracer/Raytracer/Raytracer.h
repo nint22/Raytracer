@@ -25,11 +25,16 @@ struct Ray
     float3 at(float t) const;
 };
 
+// Forward declare material: a hit will always have a reference
+// to an object's material.
+class IMaterial;
+
 // Hit has hit position and normal
 struct Hit
 {
     float3 pos;
     float3 norm;
+    IMaterial* material = nullptr;
 };
 
 // Interface to do collision testing: any shape class should conform tothis
@@ -41,12 +46,56 @@ public:
     
 };
 
+// Materials define how rays scatter: diffuse materials randomze rays a ton,
+// but metallic are highly reflective and do near perfect reflections, etc.
+class IMaterial
+{
+public:
+    
+    virtual ~IMaterial() = default;
+    
+    virtual bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const = 0;
+    
+};
+
+// Concrete Lambertian material
+class LambertianMaterial : public IMaterial
+{
+public:
+    
+    LambertianMaterial(const float3& albedo);
+    
+    bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const override;
+    
+private:
+    
+    float3 _albedo;
+    
+};
+
+// Concrete metal material
+class MetalMaterial : public IMaterial
+{
+public:
+
+    // 0 roughness = super shiney, 1 roughness = blyrr
+    MetalMaterial(const float3& albedo, float roughness);
+    
+    bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const override;
+    
+private:
+    
+    float3 _albedo;
+    float _roughness;
+};
+
 // Sphere, conforming to hittable
 class Sphere : public IHittable
 {
 public:
     
     Sphere(float radius);
+    ~Sphere();
     
     // Common properties
     float3 position() const;
@@ -54,6 +103,11 @@ public:
     
     // Sphere properties:
     float radius() const;
+    void setRadius(float radius);
+    
+    // Material
+    IMaterial* material() const;
+    void setMaterial(IMaterial* material);
     
     // Returns true if a hit was found, and returns that
     // position and normal via optional in/out via argument
@@ -62,7 +116,8 @@ public:
 private:
     
     float3 _position = simd_make_float3( 0, 0, 0 );
-    float _radius;
+    float _radius = 1.0;
+    IMaterial* _material = nullptr; // Set in constructor to a default..
     
 };
 
@@ -140,7 +195,7 @@ private:
     
     // Backing image buffer
     os_unfair_lock _backingBufferLock;
-    float4* _backingBuffer;
+    float3* _backingBuffer;
     
     // Background queue we're doing the dispatch_apply from
     dispatch_queue_t _workQueue;
@@ -152,7 +207,7 @@ private:
     };
     
     // Ray testing the scene..
-    float4 rayTest(const Ray& ray, int depth = 0) const;
+    float3 rayTest(const Ray& ray, int depth = 0) const;
     
     // Work items and lock
     os_unfair_lock _workLock;

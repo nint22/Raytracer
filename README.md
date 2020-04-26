@@ -22,6 +22,8 @@ of bounce or sample.
 
 ## Complete
 
+- Metallic material
+-- Added roughness param
 - Diffuse material
 -- Lambertian distribution
 - Fixed shadow acne
