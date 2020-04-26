@@ -14,10 +14,17 @@ I want to also stick with Apple's tech: simd vector types, dispatch_apply, etc.
 
 ## Tasks
 
-- Deal with multiple objects and hit surface
+- Diffuse material
+- Move screenshots / video per build into a directory in the repo
 
 ## Complete
 
+- Reflect completion status in window..
+- Randomize work items
+- Avoid creating work items for anti-aliasing, just do that per pixel
+- Rays bouncing
+- Anti-aliasing added with naive random vector
+- Deal with multiple objects and hit surface
 - Hit test object closest
 - Compute surface normals (and hit-position)
 - Fix aspect ratio of camera with given texture size..

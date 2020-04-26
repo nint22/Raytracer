@@ -9,6 +9,9 @@
 #include "Raytracer.h"
 
 #include <limits>
+#include <random>
+#include <algorithm>
+#include <iterator>
 
 #pragma mark Ray Struct
 
@@ -19,62 +22,97 @@ float3 Ray::at(float t) const
 
 #pragma mark Sphere Class
 
-Shape::Shape(float radius)
+Sphere::Sphere(float radius)
 {
-    _type = Sphere;
     _radius = radius;
 }
 
-Shape::Type Shape::type() const
-{
-    return _type;
-}
-
-float3 Shape::position() const
+float3 Sphere::position() const
 {
     return _position;
 }
 
-void Shape::setPosition(const float3& p)
+void Sphere::setPosition(const float3& p)
 {
     _position = p;
 }
 
-float Shape::sphereRadius() const
+float Sphere::radius() const
 {
     return _radius;
 }
 
-bool Shape::hitTest(const Ray& ray, float3* hitPosition, float3* hitNormal) const
+bool Sphere::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
 {
-    if( _type == Sphere )
+    float3 oc = ray.pos - _position;
+    float3 dir = simd_normalize( ray.dir );
+    float a = simd_length_squared( dir );
+    float half_b = simd_dot( oc, dir );
+    float c = simd_length_squared( oc ) - _radius * _radius;
+    float discrim = half_b * half_b - a * c;
+    if( discrim < 0.0 )
+        return false;
+    
+    // First root...
+    float t = ( -half_b - sqrt( discrim ) ) / a;
+    if( t >= tmin && t <= tmax )
     {
-        float3 oc = ray.pos - _position;
-        float3 dir = simd_normalize( ray.dir );
-        float a = simd_length_squared( dir );
-        float half_b = simd_dot( oc, dir );
-        float c = simd_length_squared( oc ) - _radius * _radius;
-        float discrim = half_b * half_b - a * c;
-        if( discrim < 0.0 )
-            return false;
+        float3 position = ray.at( t );
+        float3 normal = simd_normalize( position - _position );
         
-        float t = ( -half_b - sqrt( discrim ) ) / a;
-        float3 hit = ray.at( t );
-        
-        if( hitPosition != nullptr )
-            *hitPosition = hit;
-        
-        float3 normal = simd_normalize( hit - simd_make_float3( 0, 0, -1 ) );
-        if( hitNormal )
-            *hitNormal = normal;
+        if( hit != nullptr )
+        {
+            hit->pos = position;
+            hit->norm = normal;
+        }
         
         return true;
     }
-    else
+    
+    // Second root...
+    t = ( -half_b + sqrt( discrim ) ) / a;
+    if( t >= tmin && t <= tmax )
     {
-        assert( false ); // Not supported!
-        return false;
+        float3 position = ray.at( t );
+        float3 normal = simd_normalize( position - _position );
+        
+        if( hit != nullptr )
+        {
+            hit->pos = position;
+            hit->norm = normal;
+        }
+        
+        return true;
     }
+    
+    // No roots
+    return false;
+}
+
+#pragma mark Scene Class
+
+bool Scene::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
+{
+    // For each shape in the scene...
+    float bestDistance = std::numeric_limits<float>::max();
+    bool didHit = false;
+    for( const IHittable* shape : shapes )
+    {
+        Hit candidate;
+        if( shape->hitTest( ray, tmin, tmax, &candidate ) )
+        {
+            float hitDistance = simd_length( candidate.pos - ray.pos );
+            if( hitDistance < bestDistance )
+            {
+                bestDistance = hitDistance;
+                didHit = true;
+                if( hit != nullptr )
+                    *hit = candidate;
+            }
+        }
+    }
+    
+    return didHit;
 }
 
 #pragma mark Camera Class
@@ -82,11 +120,58 @@ bool Shape::hitTest(const Ray& ray, float3* hitPosition, float3* hitNormal) cons
 Camera::Camera(int2 resolution)
 {
     _resolution = resolution;
+    
+    // Define our horizontal field of view size as a specific unit size..
+    const float horizontalFieldOfView = 4;
+    const float verticalFieldOfView = ( (float)_resolution.y / _resolution.x ) * horizontalFieldOfView;
+    
+    // For now let's define some constants that will eventually come from the camera
+    lowerLeftCornerPosition = simd_make_float3(-horizontalFieldOfView / 2.0, verticalFieldOfView / 2.0, -1.0);
+    horizontalVector = simd_make_float3(horizontalFieldOfView, 0.0, 0.0);
+    verticalVector = simd_make_float3(0.0, -verticalFieldOfView, 0.0);
 }
 
 int2 Camera::resolution() const
 {
     return _resolution;
+}
+
+int Camera::sampleCount() const
+{
+    return _sampleCount;
+}
+
+void Camera::setSampleCount(int sampleCount)
+{
+    _sampleCount = sampleCount;
+}
+
+int Camera::maxBounceCount() const
+{
+    return _maxBounceCount;
+}
+
+void Camera::setMaxBounceCount(int bounceCount)
+{
+    _maxBounceCount = bounceCount;
+}
+
+float3 Camera::position() const
+{
+    return _position;
+}
+
+void Camera::setPosition(float3 position)
+{
+    _position = position;
+}
+
+Ray Camera::getRay(float2 uv) const
+{
+    Ray ray;
+    ray.pos = _position;
+    ray.dir = lowerLeftCornerPosition + uv.x * horizontalVector + uv.y * verticalVector;
+    return ray;
 }
 
 #pragma mark Raytracer Class
@@ -99,7 +184,7 @@ Raytracer::Raytracer(const Camera& camera, const Scene& scene)
     _backingBuffer = new float4[ camera.resolution().x * camera.resolution().y ];
     _backingBufferLock = OS_UNFAIR_LOCK_INIT;
     
-    _workQueue = dispatch_queue_create( "Raytracer queue", dispatch_queue_attr_make_with_qos_class( 0, QOS_CLASS_USER_INITIATED, 0 ) );
+    _workQueue = dispatch_queue_create( "Raytracer queue", dispatch_queue_attr_make_with_qos_class( 0, QOS_CLASS_DEFAULT, 0 ) );
     _workLock = OS_UNFAIR_LOCK_INIT;
     
     _state = Setup;
@@ -122,58 +207,76 @@ void Raytracer::renderAsync()
     // Declare we're going to be doing the work
     _state = Active;
     
-    // Clear our backing buffer
-    const size_t backingBufferLength = sizeof( float4 ) * _camera.resolution().x * _camera.resolution().y;
-    memset( _backingBuffer, 0, backingBufferLength );
-    
-    // Define our horizontal field of view size as a specific unit size..
-    const float horizontalFieldOfView = 4;
-    const float verticalFieldOfView = ( (float)_camera.resolution().y / _camera.resolution().x ) * horizontalFieldOfView;
-    
-    // For now let's define some constants that will eventually come from the camera
-    const float3 lower_left_corner = simd_make_float3(-horizontalFieldOfView / 2.0, verticalFieldOfView / 2.0, -1.0);
-    const float3 horizontal = simd_make_float3(horizontalFieldOfView, 0.0, 0.0);
-    const float3 vertical = simd_make_float3(0.0, -verticalFieldOfView, 0.0);
-    const float3 origin = simd_make_float3(0.0, 0.0, 0.0);
-    const float2 f2Resolution = simd_make_float2( _camera.resolution().x, _camera.resolution().y );
-    
-    // Create all the work we want to complete
-    for( int y = 0; y < _camera.resolution().y; y++ )
-    {
-        for( int x = 0; x < _camera.resolution().x; x++ )
-        {
-            // Work item at pixel...
-            WorkItem workItem;
-            workItem.pixelPos = simd_make_int2(x, y);
-            
-            // UV coordinate
-            float2 uv = simd_make_float2(x, y) / f2Resolution;
-            workItem.ray.pos = origin;
-            workItem.ray.dir = lower_left_corner + uv.x * horizontal + uv.y * vertical;
-            
-            // Push work
-            _workItems.push_back(workItem);
-        }
-    }
-    
     // Async all the work
     dispatch_async(_workQueue, ^{
+
+        // Clear our backing buffer
+        const size_t backingBufferLength = sizeof( float4 ) * _camera.resolution().x * _camera.resolution().y;
+        memset( _backingBuffer, 0, backingBufferLength );
+        
+        // Define resolution size to compute normalized UV coordinate
+        const float2 f2Resolution = simd_make_float2( _camera.resolution().x, _camera.resolution().y );
+        
+        // Create all the work we want to complete
+        printf( "Setting up render work...\n" );
+        for( int y = 0; y < _camera.resolution().y; y++ )
+        {
+            for( int x = 0; x < _camera.resolution().x; x++ )
+            {
+                // Declare work on the pixel (and save UV...)
+                WorkItem workItem;
+                workItem.pixelPos = simd_make_int2(x, y);
+                
+                // Push work
+                _workItems.push_back(workItem);
+            }
+        }
+        
+        // Shuffle so we see random points come online across the image..
+        // This helps us preview what's going on faster
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(_workItems.begin(), _workItems.end(), g);
+        
+        // Do the rendering work:
+        printf( "Starting render work...\n" );
         dispatch_apply(_workItems.size(), NULL, ^(size_t) {
             
             // Get work
             os_unfair_lock_lock(&_workLock);
-            WorkItem workItem = _workItems.back();
+            const WorkItem workItem = _workItems.back();
             _workItems.pop_back();
             os_unfair_lock_unlock(&_workLock);
             
             // Do work
-            float4 color = work(&workItem);
+            float4 color = simd_make_float4( 0, 0, 0, 0 );
+
+            // Helpful constant
+            const float2 f2Resolution = simd_make_float2( _camera.resolution().x, _camera.resolution().y );
+            
+            // For sample count..
+            for( int sampleIndex = 0; sampleIndex < _camera.sampleCount(); sampleIndex++ )
+            {
+                // Compute UV with possible offset
+                float2 uv = simd_make_float2( workItem.pixelPos.x, workItem.pixelPos.y );
+                uv.x += ( sampleIndex == 0 ) ? 0 : random_float();
+                uv.y += ( sampleIndex == 0 ) ? 0 : random_float();
+                
+                // Normalize
+                uv /= f2Resolution;
+                
+                // Generate ray through camera with this
+                Ray ray = _camera.getRay( uv );
+                
+                // Do work!
+                color += rayTest(ray);
+            }
             
             // Store to our backing buffer
             os_unfair_lock_lock(&_backingBufferLock);
             const int x = workItem.pixelPos.x;
             const int y = workItem.pixelPos.y;
-            _backingBuffer[ y * _camera.resolution().x + x ] = color;
+            _backingBuffer[ y * _camera.resolution().x + x ] = color / _camera.sampleCount();
             os_unfair_lock_unlock(&_backingBufferLock);
         });
         
@@ -182,6 +285,7 @@ void Raytracer::renderAsync()
         // also making a big assumption that the caller is always on the main thread.
         // Ew ew ew
         dispatch_async(dispatch_get_main_queue(), ^{
+            printf( "Complete!\n" );
             _state = Complete;
         });
     });
@@ -250,35 +354,24 @@ CGImageRef Raytracer::copyRenderImage()
     return image;
 }
 
-float4 Raytracer::work(const WorkItem* workItem) const
+float4 Raytracer::rayTest(const Ray& ray, int depth) const
 {
-    // For each shape in the scene...
-    float bestDistance = std::numeric_limits<float>::max();
-    bool didHit = false;
-    float4 normalColor = simd_make_float4(0, 0, 0, 1);
+    // Ignore if reached max depth
+    if( depth >= _camera.maxBounceCount() )
+        return simd_make_float4( 0, 0, 0, 0 );
     
-    for( const Shape& shape : _scene.shapes )
+    Hit candidate;
+    if( _scene.hitTest( ray, 0, std::numeric_limits<float>::max(), &candidate ) )
     {
-        float3 hitPosition, hitNormal;
-        if( shape.hitTest( workItem->ray, &hitPosition, &hitNormal ) )
-        {
-            float hitDistance = simd_length( hitPosition ); // Todo: - camera.position
-            if( hitDistance < bestDistance )
-            {
-                bestDistance = hitDistance;
-                didHit = true;
-                normalColor = simd_make_float4( ( hitNormal + 1 ) * 0.5, 1 );
-            }
-        }
+        float3 target = candidate.pos + candidate.norm + random_sphere_float3();
+        Ray newRay;
+        newRay.pos = candidate.pos;
+        newRay.dir = target - candidate.pos;
+        return 0.5 * rayTest( newRay, depth + 1 );
     }
     
-    if( didHit )
-    {
-        return normalColor;
-    }
-    
-    float3 dir = simd_normalize(workItem->ray.dir);
+    float3 dir = simd_normalize(ray.dir);
     float t = 0.5 * ( dir.y + 1.0 );
-    float3 color = ( 1.0 - t ) * simd_make_float3(1, 1, 1) + t * simd_make_float3( 0.5, 0.7, 1.0 );
+    float3 color = ( 1.0 - t ) * simd_make_float3( 1, 1, 1 ) + t * simd_make_float3( 0.5, 0.7, 1.0 );
     return simd_make_float4( color, 1 );
 }

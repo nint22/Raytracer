@@ -10,6 +10,7 @@
 #define VectorTypes_h
 
 #include <simd/simd.h>
+#include <stdlib.h>
 
 using int2 = simd_int2;
 
@@ -25,6 +26,36 @@ inline uint8_t clamp( float value, uint8_t min, uint8_t max )
         return max;
     else
         return value;
+}
+
+inline float random_float()
+{
+    return (float)rand() / RAND_MAX;
+}
+
+inline float random_float(float min, float max)
+{
+    return min + random_float() * ( max - min );
+}
+
+inline float3 random_float3()
+{
+    return simd_make_float3( random_float(), random_float(), random_float() );
+}
+
+inline float3 random_float3(float min, float max)
+{
+    return simd_make_float3( random_float( min, max ), random_float( min, max ), random_float( min, max ) );
+}
+
+inline float3 random_sphere_float3()
+{
+    while( true )
+    {
+        float3 p = random_float3( -1, 1 );
+        if( simd_length( p ) < 1 )
+            return p;
+    }
 }
 
 #endif /* VectorTypes_h */

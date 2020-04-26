@@ -25,46 +25,57 @@ struct Ray
     float3 at(float t) const;
 };
 
-// Shape is a union - could sub-class, but keeping it simple for now
-class Shape
+// Hit has hit position and normal
+struct Hit
+{
+    float3 pos;
+    float3 norm;
+};
+
+// Interface to do collision testing: any shape class should conform tothis
+class IHittable
 {
 public:
     
-    enum Type {
-        Sphere,
-    };
+    virtual bool hitTest(const Ray& ray, float tmin, float tmax, Hit* hit = nullptr) const = 0;
     
-    Shape(float radius);
+};
+
+// Sphere, conforming to hittable
+class Sphere : public IHittable
+{
+public:
     
-    // Get type
-    Type type() const;
+    Sphere(float radius);
     
     // Common properties
     float3 position() const;
     void setPosition(const float3& p);
     
     // Sphere properties:
-    float sphereRadius() const;
+    float radius() const;
     
     // Returns true if a hit was found, and returns that
     // position and normal via optional in/out via argument
-    bool hitTest(const Ray& ray, float3* hitPosition = nullptr, float3* hitNormal = nullptr) const;
+    bool hitTest(const Ray& ray, float tmin, float tmax, Hit* hit = nullptr) const override;
     
 private:
     
-    Type _type;
     float3 _position = simd_make_float3( 0, 0, 0 );
-    
     float _radius;
     
 };
 
-// Scene has a collection of shapes
+// Scene has a collection of hittable objects
 class Scene
 {
 public:
     
-    std::vector< Shape > shapes;
+    // Public for ease
+    std::vector< IHittable* > shapes;
+    
+    // Given a ray, return closest hit test (if any)
+    bool hitTest(const Ray& ray, float tmin, float tmax, Hit* hit = nullptr) const;
     
 };
 
@@ -78,9 +89,31 @@ public:
     
     int2 resolution() const;
     
+    int sampleCount() const;
+    void setSampleCount(int sampleCount);
+    
+    int maxBounceCount() const; // Times a ray can bounce around
+    void setMaxBounceCount(int bounceCount);
+    
+    float3 position() const;
+    void setPosition(float3 position);
+    
+    // Given a UV coordinate, return vector. Is randomized for AA if sample count > 1
+    Ray getRay(float2 uv) const;
+    
 private:
     
     int2 _resolution = simd_make_int2(100, 100);
+    
+    int _sampleCount = 1;
+    int _maxBounceCount = 1;
+    
+    float3 _position = simd_make_float3(0, 0, 0);
+    
+    // Camera plane properties
+    float3 lowerLeftCornerPosition;
+    float3 horizontalVector;
+    float3 verticalVector;
 };
 
 // Raytracer is the main rendering service. Takes a scene, camera, and renders it out
@@ -116,11 +149,10 @@ private:
     struct WorkItem
     {
         int2 pixelPos;
-        Ray ray;
     };
     
-    // Do work given a work item. Returns color contribution
-    float4 work(const WorkItem* workItem) const;
+    // Ray testing the scene..
+    float4 rayTest(const Ray& ray, int depth = 0) const;
     
     // Work items and lock
     os_unfair_lock _workLock;

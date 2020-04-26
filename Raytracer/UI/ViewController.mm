@@ -24,20 +24,22 @@
     [super viewDidLoad];
 
     // Setup a camera
-    Camera camera( simd_make_int2( 800, 600 ) );
+    Camera camera( simd_make_int2( 200, 150 ) );
+    camera.setSampleCount( 100 );
+    camera.setMaxBounceCount( 50 );
     
     // Setup our scene
     Scene scene;
     
     // Dead-center sphere
-    Shape sphere(0.5);
-    sphere.setPosition( simd_make_float3( 0, 0, -1 ) );
+    Sphere* sphere = new Sphere(0.5);
+    sphere->setPosition( simd_make_float3( 0, 0, -1 ) );
     scene.shapes.push_back(sphere);
     
     // Sphere that looks like ground
-    Shape bigSphere(100);
-    bigSphere.setPosition( simd_make_float3( 0, -100.5, -1 ) );
-    scene.shapes.push_back(bigSphere);
+    sphere = new Sphere(100);
+    sphere->setPosition( simd_make_float3( 0, -100.5, -1 ) );
+    scene.shapes.push_back(sphere);
     
     // Do any additional setup after loading the view.
     _raytracer = new Raytracer( camera, scene );
@@ -59,6 +61,10 @@
         // If we're truely done, stop asking to update the backing image..
         if( raytracer->isComplete() )
         {
+            // Change window title
+            NSWindow* window = [[self view] window];
+            [window setTitle: @"Complete!"];
+            
             [self->_syncTimer invalidate];
             self->_syncTimer = nil;
         }
