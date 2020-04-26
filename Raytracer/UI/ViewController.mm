@@ -24,51 +24,82 @@
     [super viewDidLoad];
 
     // Camera position
-    float3 cameraPos = simd_make_float3( 3, 3, 2 );
-    float3 cameraTarget = simd_make_float3( 0, 0, -1 );
+    float3 cameraPos = simd_make_float3( 13, 2, 3 );
+    float3 cameraTarget = simd_make_float3( 0, 0, 0 );
     float3 cameraUp = simd_make_float3( 0, -1, 0 );
     
     // Defocus blur
-    float aperature = 2;
-    float distanceToFocus = simd_length( cameraTarget - cameraPos );
+    float aperature = 0.1;
+    float distanceToFocus = 10;
     
     // Setup a camera
-    Camera camera( simd_make_int2( 300, 150 ), cameraPos, cameraTarget, cameraUp, 20, aperature, distanceToFocus );
-    camera.setSampleCount( 100 );
+    Camera camera( simd_make_int2( 800, 400 ), cameraPos, cameraTarget, cameraUp, 20, aperature, distanceToFocus );
+    camera.setSampleCount( 200 );
     camera.setMaxBounceCount( 50 );
     
-    // Setup our scene
+    // Create a scene
     Scene scene;
     
-    // Dead-center sphere
-    Sphere* sphere = new Sphere(0.5);
-    sphere->setPosition( simd_make_float3( 0, 0, -1 ) );
-    sphere->setMaterial( new LambertianMaterial( simd_make_float3( 0.7, 0.3, 0.3 ) ) );
-    scene.shapes.push_back(sphere);
-    
     // Sphere that looks like ground
-    sphere = new Sphere(100);
-    sphere->setPosition( simd_make_float3( 0, -100.5, -1 ) );
-    sphere->setMaterial( new LambertianMaterial( simd_make_float3( 0.8, 0.8, 0.0 ) ) );
+    Sphere* sphere = new Sphere(1000);
+    sphere->setPosition( simd_make_float3( 0, -1000, -1 ) );
+    sphere->setMaterial( new LambertianMaterial( simd_make_float3( 0.5, 0.5, 0.5 ) ) );
     scene.shapes.push_back(sphere);
-    
-    // Metalic spheres
-    sphere = new Sphere(0.5);
-    sphere->setPosition( simd_make_float3( 1, 0, -1 ) );
-    sphere->setMaterial( new MetalMaterial( simd_make_float3( 0.8, 0.6, 0.2 ), 1.0 ) );
-    scene.shapes.push_back(sphere);
-    
+
     // Glass sphere
-    sphere = new Sphere(0.5);
-    sphere->setPosition( simd_make_float3( -1, 0, -1 ) );
-    sphere->setMaterial( new DielectricMaterial(1.5) );
+    sphere = new Sphere( 1.0 );
+    sphere->setPosition( simd_make_float3( 0, 1, 0 ) );
+    sphere->setMaterial( new DielectricMaterial( 1.5 ) );
+    scene.shapes.push_back(sphere);
+
+    // Metalic spheres
+    sphere = new Sphere( 1.0 );
+    sphere->setPosition( simd_make_float3( -4, 1, 0 ) );
+    sphere->setMaterial( new LambertianMaterial( random_float3() * random_float3() ) );
+    scene.shapes.push_back(sphere);
+
+    // Diffuse
+    sphere = new Sphere( 1.0 );
+    sphere->setPosition( simd_make_float3( 4, 1, 0 ) );
+    sphere->setMaterial( new MetalMaterial( simd_make_float3( 0.7, 0.6, 0.5 ), 0.0 ) );
     scene.shapes.push_back(sphere);
     
-    // With empty interior
-    sphere = new Sphere(-0.45);
-    sphere->setPosition( simd_make_float3( -1, 0, -1 ) );
-    sphere->setMaterial( new DielectricMaterial(1.5) );
-    scene.shapes.push_back(sphere);
+    // Create a bunch of random spheres..
+    for( int y = -11; y < 11; y++ )
+    {
+        for( int x = -11; x < 11; x++ )
+        {
+            const float3 position = simd_make_float3( x + 0.9 * random_float(), 0.2, y + 0.9 * random_float() );
+            if( simd_length( position - simd_make_float3( 4, 0.2, 0 ) ) > 0.9 )
+            {
+                const float materialChoice = random_float();
+                if( materialChoice < 0.8 )
+                {
+                    // Diffuse
+                    sphere = new Sphere( 0.2 );
+                    sphere->setPosition( position );
+                    sphere->setMaterial( new LambertianMaterial( random_float3() * random_float3() ) );
+                    scene.shapes.push_back(sphere);
+                }
+                else if( materialChoice < 0.95 )
+                {
+                    // Metalic spheres
+                    sphere = new Sphere( 0.2 );
+                    sphere->setPosition( position );
+                    sphere->setMaterial( new MetalMaterial( random_float3( 0.5, 1.0 ), random_float( 0.0, 0.5 ) ) );
+                    scene.shapes.push_back(sphere);
+                }
+                else
+                {
+                    // Glass sphere
+                    sphere = new Sphere( 0.2 );
+                    sphere->setPosition( position );
+                    sphere->setMaterial( new DielectricMaterial( 1.5 ) );
+                    scene.shapes.push_back(sphere);
+                }
+            }
+        }
+    }
     
     // Do any additional setup after loading the view.
     _raytracer = new Raytracer( camera, scene );
@@ -96,6 +127,24 @@
             
             [self->_syncTimer invalidate];
             self->_syncTimer = nil;
+            
+            // Save image out to /tmp/raytracing.png
+            CGImageRef image = raytracer->copyRenderImage();
+            
+            CFURLRef url = (__bridge CFURLRef)[NSURL fileURLWithPath: @"/tmp/raytracing.png"];
+            CGImageDestinationRef destination = CGImageDestinationCreateWithURL( url, kUTTypePNG, 1, NULL );
+            CGImageDestinationAddImage( destination, image, NULL );
+            
+            if( CGImageDestinationFinalize( destination ) == false )
+            {
+                NSLog( @"Failed to write image!" );
+                CFRelease( destination );
+                CGImageRelease( image );
+                return;
+            }
+            
+            CFRelease( destination );
+            CGImageRelease( image );
         }
     }];
 }

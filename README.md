@@ -18,11 +18,12 @@ of bounce or sample.
 
 ## Tasks
 
-- Move screenshots / video per build into a directory in the repo
 - Shadows
 
 ## Complete
 
+- Save image to /tmp on completion of render
+- Move screenshots / video per build into a directory in the repo
 - Defocus blur / depth of field effect
 - Implement camera look-at (huh, not using matrix, but rather doing the math directly and simplified)
 - Camera position

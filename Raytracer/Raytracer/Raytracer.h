@@ -142,7 +142,7 @@ class Scene
 {
 public:
     
-    // Public for ease
+    // Public for ease. Leaking, that's fine for toy project
     std::vector< IHittable* > shapes;
     
     // Given a ray, return closest hit test (if any)
