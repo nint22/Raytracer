@@ -35,6 +35,11 @@ bool LambertianMaterial::scatter(const Ray& ray, const Hit& hit, float3* attenua
     return true;
 }
 
+float3 LambertianMaterial::emitted(float2 uv, const Hit& hit) const
+{
+    return simd_make_float3( 0, 0, 0 );
+}
+
 MetalMaterial::MetalMaterial(const float3& albedo, float roughness)
 {
     _albedo = albedo;
@@ -48,6 +53,11 @@ bool MetalMaterial::scatter(const Ray& ray, const Hit& hit, float3* attenuation,
     scattered->dir = reflected + _roughness * random_unit_float3();
     *attenuation = _albedo;
     return ( simd_dot( scattered->dir, hit.norm ) > 0 );
+}
+
+float3 MetalMaterial::emitted(float2 uv, const Hit& hit) const
+{
+    return simd_make_float3( 0, 0, 0 );
 }
 
 DielectricMaterial::DielectricMaterial(float ri)
@@ -90,6 +100,28 @@ bool DielectricMaterial::scatter(const Ray& ray, const Hit& hit, float3* attenua
     }
     
     return true;
+}
+
+float3 DielectricMaterial::emitted(float2 uv, const Hit& hit) const
+{
+    return simd_make_float3( 0, 0, 0 );
+}
+
+DiffuseLightMaterial::DiffuseLightMaterial(float3 light)
+{
+    _light = light;
+}
+
+bool DiffuseLightMaterial::scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const
+{
+    // Light material itself doesn't re-scatter anything
+    return false;
+}
+
+float3 DiffuseLightMaterial::emitted(float2 uv, const Hit& hit) const
+{
+    // Light does emit!
+    return _light;
 }
 
 #pragma mark Sphere Class
@@ -470,22 +502,41 @@ CGImageRef Raytracer::copyRenderImage()
 
 float3 Raytracer::rayTest(const Ray& ray, int depth) const
 {
-    // Ignore if reached max depth
+    // Ignore if reached max depth: no light
     if( depth >= _camera.maxBounceCount() )
         return simd_make_float3( 0, 0, 0 );
     
+    // Run hit test
     Hit candidate;
-    if( _scene.hitTest( ray, 0.001, std::numeric_limits<float>::max(), &candidate ) )
+    bool didHit = _scene.hitTest( ray, 0.001, std::numeric_limits<float>::max(), &candidate );
+    
+    // Hit nothing... Return background
+    if( didHit == false )
     {
-        Ray scatteredRay;
-        float3 attenuation;
-        if( candidate.material->scatter( ray, candidate, &attenuation, &scatteredRay ) )
-        {
-            return attenuation * rayTest( scatteredRay, depth + 1 );
-        }
+        float3 dir = simd_normalize(ray.dir);
+        float t = 0.5 * ( dir.y + 1.0 );
+        
+        // Skylight via gradient:
+        //return ( 1.0 - t ) * simd_make_float3( 1, 1, 1 ) + t * simd_make_float3( 0.5, 0.7, 1.0 );
+        
+        // No light from sky:
+        return simd_make_float3(0, 0, 0);
     }
     
-    float3 dir = simd_normalize(ray.dir);
-    float t = 0.5 * ( dir.y + 1.0 );
-    return ( 1.0 - t ) * simd_make_float3( 1, 1, 1 ) + t * simd_make_float3( 0.5, 0.7, 1.0 );
+    // Hit something! Test how it bounces...
+    Ray scatteredRay;
+    float3 attenuation;
+    float3 emitted = candidate.material->emitted( simd_make_float2(0, 0), candidate );
+    bool didScatter = candidate.material->scatter( ray, candidate, &attenuation, &scatteredRay );
+    
+    // If scattering..
+    if( didScatter )
+    {
+        return emitted + attenuation * rayTest( scatteredRay, depth + 1 );
+    }
+    // Not scattering: just emissive..
+    else
+    {
+        return emitted;
+    }
 }

@@ -33,7 +33,7 @@
     float distanceToFocus = 10;
     
     // Setup a camera
-    Camera camera( simd_make_int2( 800, 400 ), cameraPos, cameraTarget, cameraUp, 20, aperature, distanceToFocus );
+    Camera camera( simd_make_int2( 1600, 800 ), cameraPos, cameraTarget, cameraUp, 20, aperature, distanceToFocus );
     camera.setSampleCount( 200 );
     camera.setMaxBounceCount( 50 );
     
@@ -62,6 +62,17 @@
     sphere = new Sphere( 1.0 );
     sphere->setPosition( simd_make_float3( 4, 1, 0 ) );
     sphere->setMaterial( new MetalMaterial( simd_make_float3( 0.7, 0.6, 0.5 ), 0.0 ) );
+    scene.shapes.push_back(sphere);
+    
+    // Add a pair of light
+    sphere = new Sphere( 0.5 );
+    sphere->setPosition( simd_make_float3( 0.5, 2, 0.5 ) );
+    sphere->setMaterial( new DiffuseLightMaterial( simd_make_float3( 4, 4, 4 ) ) );
+    scene.shapes.push_back(sphere);
+    
+    sphere = new Sphere( 0.5 );
+    sphere->setPosition( simd_make_float3( 2, 2, 2 ) );
+    sphere->setMaterial( new DiffuseLightMaterial( simd_make_float3( 4, 4, 4 ) ) );
     scene.shapes.push_back(sphere);
     
     // Create a bunch of random spheres..

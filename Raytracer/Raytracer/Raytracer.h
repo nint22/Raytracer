@@ -57,6 +57,8 @@ public:
     
     virtual bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const = 0;
     
+    virtual float3 emitted(float2 uv, const Hit& hit) const = 0;
+    
 };
 
 // Concrete Lambertian material
@@ -67,6 +69,7 @@ public:
     LambertianMaterial(const float3& albedo);
     
     bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const override;
+    float3 emitted(float2 uv, const Hit& hit) const override;
     
 private:
     
@@ -83,6 +86,7 @@ public:
     MetalMaterial(const float3& albedo, float roughness);
     
     bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const override;
+    float3 emitted(float2 uv, const Hit& hit) const override;
     
 private:
     
@@ -98,10 +102,26 @@ public:
     DielectricMaterial(float ri);
     
     bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const override;
+    float3 emitted(float2 uv, const Hit& hit) const override;
     
 private:
     
     float _ri;
+};
+
+// Concrete light material
+class DiffuseLightMaterial : public IMaterial
+{
+public:
+
+    DiffuseLightMaterial(float3 light);
+    
+    bool scatter(const Ray& ray, const Hit& hit, float3* attenuation, Ray* scattered) const override;
+    float3 emitted(float2 uv, const Hit& hit) const override;
+    
+private:
+    
+    float3 _light;
 };
 
 

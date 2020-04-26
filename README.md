@@ -18,10 +18,11 @@ of bounce or sample.
 
 ## Tasks
 
-- Shadows
+- Now complete with toy project! :)
 
 ## Complete
 
+- Shadows
 - Save image to /tmp on completion of render
 - Move screenshots / video per build into a directory in the repo
 - Defocus blur / depth of field effect
