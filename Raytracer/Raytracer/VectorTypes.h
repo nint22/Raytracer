@@ -11,6 +11,7 @@
 
 #include <simd/simd.h>
 #include <stdlib.h>
+#include <math.h>
 
 using int2 = simd_int2;
 
@@ -56,6 +57,14 @@ inline float3 random_sphere_float3()
         if( simd_length( p ) < 1 )
             return p;
     }
+}
+
+inline float3 random_unit_float3()
+{
+    float a = random_float( 0, 2.0 * M_PI );
+    float z = random_float( -1, 1 );
+    float r = sqrt( 1.0 - z * z );
+    return simd_make_float3( r * cos( a ), r * sin( a ), z );
 }
 
 #endif /* VectorTypes_h */

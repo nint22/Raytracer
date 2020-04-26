@@ -214,9 +214,6 @@ void Raytracer::renderAsync()
         const size_t backingBufferLength = sizeof( float4 ) * _camera.resolution().x * _camera.resolution().y;
         memset( _backingBuffer, 0, backingBufferLength );
         
-        // Define resolution size to compute normalized UV coordinate
-        const float2 f2Resolution = simd_make_float2( _camera.resolution().x, _camera.resolution().y );
-        
         // Create all the work we want to complete
         printf( "Setting up render work...\n" );
         for( int y = 0; y < _camera.resolution().y; y++ )
@@ -368,7 +365,7 @@ float4 Raytracer::rayTest(const Ray& ray, int depth) const
     Hit candidate;
     if( _scene.hitTest( ray, 0.001, std::numeric_limits<float>::max(), &candidate ) )
     {
-        float3 target = candidate.pos + candidate.norm + random_sphere_float3();
+        float3 target = candidate.pos + candidate.norm + random_unit_float3();
         Ray newRay;
         newRay.pos = candidate.pos;
         newRay.dir = target - candidate.pos;
