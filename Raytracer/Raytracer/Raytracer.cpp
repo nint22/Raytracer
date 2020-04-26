@@ -218,18 +218,20 @@ bool Scene::hitTest(const Ray& ray, float tmin, float tmax, Hit* hit) const
 
 #pragma mark Camera Class
 
-Camera::Camera(int2 resolution)
+Camera::Camera(int2 resolution, float fovy)
 {
+    _fovy = fovy;
     _resolution = resolution;
     
-    // Define our horizontal field of view size as a specific unit size..
-    const float horizontalFieldOfView = 4;
-    const float verticalFieldOfView = ( (float)_resolution.y / _resolution.x ) * horizontalFieldOfView;
+    // Degrees to radians
+    fovy *= ( M_PI / 180.0 );
+    float halfHeight = tan( fovy / 2.0 );
+    float halfWidth = ( (float)_resolution.x / _resolution.y ) * halfHeight;
     
     // For now let's define some constants that will eventually come from the camera
-    lowerLeftCornerPosition = simd_make_float3(-horizontalFieldOfView / 2.0, verticalFieldOfView / 2.0, -1.0);
-    horizontalVector = simd_make_float3(horizontalFieldOfView, 0.0, 0.0);
-    verticalVector = simd_make_float3(0.0, -verticalFieldOfView, 0.0);
+    lowerLeftCornerPosition = simd_make_float3( -halfWidth, halfHeight, -1.0 );
+    horizontalVector = simd_make_float3( 2 * halfWidth, 0.0, 0.0 );
+    verticalVector = simd_make_float3( 0.0, -2 * halfHeight, 0.0 );
 }
 
 int2 Camera::resolution() const
@@ -271,7 +273,7 @@ Ray Camera::getRay(float2 uv) const
 {
     Ray ray;
     ray.pos = _position;
-    ray.dir = lowerLeftCornerPosition + uv.x * horizontalVector + uv.y * verticalVector;
+    ray.dir = lowerLeftCornerPosition + uv.x * horizontalVector + uv.y * verticalVector - _position;
     return ray;
 }
 

@@ -19,10 +19,11 @@ of bounce or sample.
 ## Tasks
 
 - Move screenshots / video per build into a directory in the repo
-- Camera position
 
 ## Complete
 
+- Camera position
+- Camera field-of-view (vertical degrees)
 - Support front / back intersection differentiation
 - Refreaction & dielectrics
 -- Backface testing not implemented

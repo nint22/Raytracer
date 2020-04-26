@@ -156,7 +156,7 @@ class Camera
 public:
     
     Camera() = default;
-    Camera(int2 resolution);
+    Camera(int2 resolution, float fovy);
     
     int2 resolution() const;
     
@@ -174,6 +174,7 @@ public:
     
 private:
     
+    float _fovy; // Vertical degrees
     int2 _resolution = simd_make_int2(100, 100);
     
     int _sampleCount = 1;

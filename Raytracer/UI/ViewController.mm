@@ -24,7 +24,7 @@
     [super viewDidLoad];
 
     // Setup a camera
-    Camera camera( simd_make_int2( 300, 150 ) );
+    Camera camera( simd_make_int2( 300, 150 ), 85 );
     camera.setSampleCount( 100 );
     camera.setMaxBounceCount( 50 );
     
