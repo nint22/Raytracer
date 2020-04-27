@@ -16,9 +16,20 @@ Doing a randomized progressive renderer ended up being super helpful to stop ren
 Keeping the number of work units small was critical. I only create a unit of work for a pixel, not for each permutation
 of bounce or sample.
 
+In the end I was able to use dispatch_apply and effectively do my goal of "progressive rendering previews". The overhead
+cost was measured to be small during total compute. Doing the pattern of per-pixel dispatch_apply made the most sense,
+rather than allocating the gigs needed to do per ray-test dispatch_apply. QoS normal was used, and balanced between UI events
+and keeping work focused.
+
+Final project screenshots. [See more here](Screenshots/). Background lighting vs. light-orbs with shadows:
+
+![](Screenshots/raytracing_skylight.jpeg)
+
+![](Screenshots/raytracing_shadows.jpeg)
+
 ## Tasks
 
-- Now complete with toy project! :)
+- Now complete with weekend project! :)
 
 ## Complete
 
@@ -30,7 +41,7 @@ of bounce or sample.
 - Camera position
 - Camera field-of-view (vertical degrees)
 - Support front / back intersection differentiation
-- Refreaction & dielectrics
+- Reflection & dielectrics
 -- Backface testing not implemented
 - Metallic material
 -- Added roughness param
